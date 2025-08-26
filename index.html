@@ -446,7 +446,13 @@ body {
 #selected-categories {
   background-color: #EBEBEB;
   /* 設定已選分類區域最小高度 */
-  min-height: 28px;
+  min-height: 25px;
+
+/* 關鍵修改：使用 Flexbox 讓內容垂直置中 */
+  display: flex;
+  align-items: center; /* 讓內容垂直置中 */
+  flex-wrap: wrap;     /* 保持換行功能 */
+  
 }
 </style>
 </head>
@@ -496,7 +502,7 @@ body {
     <!-- Active filters -->
     <div id="active-filters" class="flex items-center mt-3">
       <div class="flex-grow px-3 py-2 bg-[#EBEBEB] rounded-lg">
-        <div id="selected-categories" class="flex flex-wrap gap-1">
+        <div id="selected-categories" class="flex flex-wrap">
           <!-- Selected category tags will be inserted here -->
         </div>
       </div>
@@ -997,7 +1003,7 @@ function updateSelectedCategoriesUI() {
   if (selectedCategories.size > 0) {
     Array.from(selectedCategories).forEach(category => {
       const tag = document.createElement('div');
-      tag.className = 'filter-tag bg-warm-brown-200 text-warm-brown-800 cursor-pointer text-xs px-2 py-1 rounded-full flex items-center mr-2 mb-1 border-0';
+      tag.className = 'filter-tag bg-warm-brown-200 text-warm-brown-800 cursor-pointer text-xs px-2 py-1 rounded-full flex items-center mr-2 border-0';
       
       const span = document.createElement('span');
       span.textContent = category;
@@ -1028,7 +1034,7 @@ function updateSelectedCategoriesUI() {
     const emptyText = document.createElement('span');
     emptyText.className = 'text-grey-400 text-xs';
     emptyText.textContent = '尚未選擇任何分類';
-    selectedCategoriesContainer.classList.add('flex', 'items-center');
+    
     selectedCategoriesContainer.appendChild(emptyText);
   }
   
@@ -1286,13 +1292,3 @@ function getLanguageClass(language) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
