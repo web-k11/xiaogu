@@ -451,7 +451,7 @@ body {
   display: flex;
   align-items: center; /* 讓內容垂直置中 */
   flex-wrap: wrap;     /* 保持換行功能 */
-  gap: 4px 0px; /* 增加行與列之間的間距 */
+  gap: 4px 4px; /* 增加行與列之間的間距 */
   
 }
 </style>
@@ -1003,7 +1003,7 @@ function updateSelectedCategoriesUI() {
   if (selectedCategories.size > 0) {
     Array.from(selectedCategories).forEach(category => {
       const tag = document.createElement('div');
-      tag.className = 'filter-tag bg-warm-brown-200 text-warm-brown-800 cursor-pointer text-xs px-2 py-1 rounded-full flex items-center mx-1 border-0';
+      tag.className = 'filter-tag bg-warm-brown-200 text-warm-brown-800 cursor-pointer text-xs px-2 py-1 rounded-full flex items-center border-0';
       
       const span = document.createElement('span');
       span.textContent = category;
@@ -1292,5 +1292,6 @@ function getLanguageClass(language) {
 </script>
 </body>
 </html>
+
 
 
