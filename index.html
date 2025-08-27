@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -500,14 +501,14 @@ body {
 
     <!-- Active filters -->
     <div id="active-filters" class="flex items-center mt-3">
-      <div class="flex-grow px-3 py-2 bg-[#EBEBEB] rounded-lg">
+      <div class="w-full px-3 py-2 bg-[#EBEBEB] rounded-lg">
         <div id="selected-categories" class="flex flex-wrap content-center">
           <!-- Selected category tags will be inserted here -->
         </div>
       </div>
       <button
         id="clear-categories"
-        class="clear-button ml-2 text-sm text-warm-brown-500 hover:text-warm-brown-600 font-medium px-3 py-1 bg-navy-blue-100 rounded-lg hover:bg-navy-blue-200 transition-colors disabled"
+        class="clear-button w-24 ml-2 text-sm text-warm-brown-500 hover:text-warm-brown-600 font-medium px-3 py-1 bg-navy-blue-100 rounded-lg hover:bg-navy-blue-200 transition-colors disabled"
 >
         清除分類
       </button>
@@ -969,7 +970,7 @@ function updateCategoryFilterUI() {
 
   sortedCategories.forEach(category => {
     const button = document.createElement('button');
-    button.className = `px-3 py-1.5 rounded-lg bg-warm-brown-100 hover:bg-warm-brown-200 text-warm-brown-700 font-medium flex items-center text-base transition-all duration-200 ${
+    button.className = `px-2 py-1.5 rounded-lg bg-warm-brown-100 hover:bg-warm-brown-200 text-warm-brown-700 font-medium flex items-center text-base transition-all duration-200 ${
       selectedCategories.has(category)
         ? 'bg-warm-brown-500 text-grey-100 hover:bg-warm-brown-600 -translate-y-1 shadow-md'
         : ''
@@ -1002,7 +1003,7 @@ function updateSelectedCategoriesUI() {
   if (selectedCategories.size > 0) {
     Array.from(selectedCategories).forEach(category => {
       const tag = document.createElement('div');
-      tag.className = 'filter-tag bg-warm-brown-200 text-warm-brown-800 cursor-pointer text-xs px-2 py-1 rounded-full flex items-center mr-2 border-0';
+      tag.className = 'filter-tag bg-warm-brown-200 text-warm-brown-800 cursor-pointer text-xs px-2 py-1 rounded-full flex items-center mx-1 border-0';
       
       const span = document.createElement('span');
       span.textContent = category;
@@ -1291,10 +1292,3 @@ function getLanguageClass(language) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
