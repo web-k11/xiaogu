@@ -775,7 +775,9 @@ async function fetchSheetData() {
 
     const proxyEndpoint = 'https://script.google.com/macros/s/AKfycbw4HZekmV2_-9wU-Zz-PpcsPgsUgT2VFzQy93JoC47Mk0igAJDDMAFQDMYuE5Itglor/exec';
     
-    const targetUrl = dataSourceConfig.enableDataProxy ? proxyEndpoint : directApiEndpoint;
+    const targetUrl = dataSourceConfig.enableDataProxy 
+      ? `${proxyEndpoint}?t=${new Date().getTime()}` 
+      : directApiEndpoint;
 
     const response = await fetch(targetUrl);
     
