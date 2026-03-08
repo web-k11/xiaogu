@@ -753,64 +753,39 @@ function toggleSearchClearButton() {
   }
 }
 
-// 獲取試算表數據
 async function fetchSheetData() {
   showLoading();
   hideError();
 
   try {
-    // 使用 Google Sheets API v4 直接獲取數據 (障眼法設定)
-    // 注意：這需要試算表已設置為 "任何人都可以查看"
+// 試算表ID
     const dataSourceConfig = {
-      sheetId: '1sLi8ap9scV_iKPb_IiGLxiaoguKB11k6lbyincsliUNYws',
-      apiKey: 'AIzaSyDFU1PfucksOmEKnJkCi5-1kxiaoguVMi6yk5aDtE',
-      targetRange: 'Sheet1',
+      sheetId: '1sLi8ap9scV_iKPb_IiGLxiaogumP7kpKBk6lbyincsliUNYws',
+      apiKey: 'AIzaSyDFU1PsOmEKCZfuckfnJkCi5-1kVMi6yk5aDtE',
       enableDataProxy: true
     };
-    
-    const directApiEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${dataSourceConfig.sheetId}/values/${dataSourceConfig.targetRange}?key=${dataSourceConfig.apiKey}`;
-    
-    console.log(`[DataService] Initializing sync for dataset: ${dataSourceConfig.sheetId}`);
 
-
-    const proxyEndpoint = 'https://script.google.com/macros/s/AKfycbw4HZekmV2_-9wU-Zz-PpcsPgsUgT2VFzQy93JoC47Mk0igAJDDMAFQDMYuE5Itglor/exec';
-    
-    const targetUrl = dataSourceConfig.enableDataProxy 
-      ? `${proxyEndpoint}?t=${new Date().getTime()}` 
-      : directApiEndpoint;
+    const targetUrl = `./data.json?t=${new Date().getTime()}`;
 
     const response = await fetch(targetUrl);
-    
-    if (!response.ok) {
-      throw new Error('DataSync Exception: Failed to retrieve remote dataset.');
-    }
+    if (!response.ok) throw new Error('Failed to load static dataset.');
 
     const data = await response.json();
     
-    // 1. 處理標題與頁面設定 (來自 GAS 的 titleData)
+    // 1. 渲染標題
     if (data.titleData && data.titleData.length > 0) {
-      const titleObject = data.titleData[0];
-      const pageTitle = titleObject['分頁'] || '';
-      const mainTitle = titleObject['大標題'] || '';
-      const subtitle = titleObject['副標題'] || '';
-      
-      if (pageTitle) document.title = pageTitle;
-      const mainTitleElement = document.querySelector('.title-effect');
-      if (mainTitle && mainTitleElement) mainTitleElement.textContent = mainTitle;
-      const subtitleElement = document.querySelector('.subtitle');
-      if (subtitle && subtitleElement) subtitleElement.textContent = subtitle;
+      const t = data.titleData[0];
+      if (t['分頁']) document.title = t['分頁'];
+      document.querySelector('.title-effect').textContent = t['大標題'] || '';
+      document.querySelector('.subtitle').textContent = t['副標題'] || '';
     }
 
-    // 2. 處理內容資料 (來自 GAS 的 sheet1Data)
-    if (data.sheet1Data) {
-      processSheetData(data.sheet1Data);
-    } else {
-      processSheetData([]);
-    }
+    // 2. 渲染內容
+    processSheetData(data.sheet1Data || []);
     
     hideLoading();
   } catch (err) {
-    console.error('[DataService] Synchronization failed:', err);
+    console.error('[DataService] Sync failed:', err);
     hideLoading();
     showError();
   }
