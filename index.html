@@ -753,50 +753,89 @@ function toggleSearchClearButton() {
   }
 }
 
-async function fetchSheetData() {
-  showLoading();
-  hideError();
+
+
+
+// --- 智慧更新設定 ---
+let lastUpdateTimestamp = 0; // 記錄上次成功的更新時間
+const UPDATE_COOLDOWN = 2 * 60 * 1000; // 2 分鐘 (毫秒)
+
+// 獲取試算表數據 (新增 isSilent 參數，判斷是否為背景靜默更新)
+async function fetchSheetData(isSilent = false) {
+  // 如果不是靜默更新，才顯示讀取中動畫
+  if (!isSilent) {
+    showLoading();
+    hideError();
+  }
 
   try {
-// 試算表ID
+  // 試算表ID
     const dataSourceConfig = {
-      sheetId: '1sLi8ap9scV_iKPb_IiGLxiaogumP7kpKBk6lbyincsliUNYws',
-      apiKey: 'AIzaSyDFU1PsOmEKCZfuckfnJkCi5-1kVMi6yk5aDtE',
+      sheetId: '1sLi8ap9scV_iKPb_IiGLmP7kpKBk6lbyincsliUNYws',
+      apiKey: 'AIzaSyDFU1PsOmEKCZfnJkCi5-1kVMi6yk5aDtE',
+      targetRange: 'Sheet1',
       enableDataProxy: true
     };
+    
+    const proxyEndpoint = 'https://script.google.com/macros/s/AKfycbw4HZekmV2_-9wU-Zz-PpcsPgsUgT2VFzQy93JoC47Mk0igAJDDMAFQDMYuE5Itglor/exec';
+    const targetUrl = `${proxyEndpoint}?t=${new Date().getTime()}`;
 
-    const targetUrl = `./data.json?t=${new Date().getTime()}`;
-
-const response = await fetch(targetUrl, {
-      cache: "no-store", // 跳過快取
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-
-    if (!response.ok) throw new Error('Failed to load static dataset.');
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error('Network response was not ok');
 
     const data = await response.json();
     
-    // 1. 渲染標題
+    // 更新成功，紀錄時間
+    lastUpdateTimestamp = Date.now();
+    console.log(`[DataService] ${isSilent ? '背景更新' : '初次載入'}成功: ${new Date().toLocaleTimeString()}`);
+
+    // 1. 處理標題與頁面設定
     if (data.titleData && data.titleData.length > 0) {
-      const t = data.titleData[0];
-      if (t['分頁']) document.title = t['分頁'];
-      document.querySelector('.title-effect').textContent = t['大標題'] || '';
-      document.querySelector('.subtitle').textContent = t['副標題'] || '';
+      const titleObject = data.titleData[0];
+      if (titleObject['分頁']) document.title = titleObject['分頁'];
+      const mainTitleElement = document.querySelector('.title-effect');
+      if (mainTitleElement) mainTitleElement.textContent = titleObject['大標題'] || '';
+      const subtitleElement = document.querySelector('.subtitle');
+      if (subtitleElement) subtitleElement.textContent = titleObject['副標題'] || '';
     }
 
-    // 2. 渲染內容
-    processSheetData(data.sheet1Data || []);
+    // 2. 處理內容資料 (自動覆蓋舊資料)
+    if (data.sheet1Data) {
+      processSheetData(data.sheet1Data);
+    }
     
     hideLoading();
   } catch (err) {
     console.error('[DataService] Sync failed:', err);
-    hideLoading();
-    showError();
+    // 只有在非靜默狀態下才顯示錯誤訊息
+    if (!isSilent) {
+      hideLoading();
+      showError();
+    }
   }
 }
+
+// 偵測是否需要更新的邏輯
+function checkForUpdate() {
+  const now = Date.now();
+  // 如果從未更新過，或距離上次更新超過 30 分鐘
+  if (lastUpdateTimestamp !== 0 && (now - lastUpdateTimestamp > UPDATE_COOLDOWN)) {
+    console.log("[AutoSync] 偵測到活動且冷卻結束，啟動背景更新...");
+    fetchSheetData(true); // 傳入 true，代表靜默更新，不轉圈圈
+  }
+}
+
+// 監聽行為：使用者滑動網頁時
+window.addEventListener('scroll', () => {
+  checkForUpdate();
+}, { passive: true });
+
+// 初始化：頁面載入後執行第一次（這次會轉圈圈）
+window.addEventListener('DOMContentLoaded', () => {
+  fetchSheetData(false);
+});
+
+  
 
 
 // 處理試算表數據
