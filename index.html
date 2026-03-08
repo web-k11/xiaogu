@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -752,92 +753,62 @@ function toggleSearchClearButton() {
   }
 }
 
-// 獲取試算表數據 (僅使用替代服務，例如 OpenSheet)
+// 獲取試算表數據
 async function fetchSheetData() {
   showLoading();
   hideError();
 
   try {
-    // 這裡只需要您的試算表 ID，不需要 API Key
-    const sheetId = '1ss8GHvtEkJle_k3iB4Owl6jmwkiGwZktiv84YuvCWMM'; 
+    // 使用 Google Sheets API v4 直接獲取數據 (障眼法設定)
+    // 注意：這需要試算表已設置為 "任何人都可以查看"
+    const dataSourceConfig = {
+      sheetId: '1sLi8ap9scV_iKPb_IiGLxiaoguKB11k6lbyincsliUNYws',
+      apiKey: 'AIzaSyDFU1PfucksOmEKnJkCi5-1kxiaoguVMi6yk5aDtE',
+      targetRange: 'Sheet1',
+      enableDataProxy: true
+    };
     
-    // 1. Fetch Title Data (分頁: title)
-    // 使用 opensheet.elk.sh 讀取標題分頁，與歌曲讀取方式一致
-    const titleApiUrl = `https://opensheet.elk.sh/${sheetId}/title`;
-    const titleResponse = await fetch(titleApiUrl);
+    const directApiEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${dataSourceConfig.sheetId}/values/${dataSourceConfig.targetRange}?key=${dataSourceConfig.apiKey}`;
     
-    if (titleResponse.ok) {
-        const titleData = await titleResponse.json();
-        
-        // OpenSheet 返回的是物件陣列，我們假設第一筆資料 (索引 0) 就是標題內容
-        if (titleData.length > 0) {
-            const titleObject = titleData[0]; // 標題物件: {'分頁': '值A', '大標題': '值B', '副標題': '值C'}
-            
-            const pageTitle = titleObject['分頁'] || '';
-            const mainTitle = titleObject['大標題'] || '';
-            const subtitle = titleObject['副標題'] || '';
-            
-            // 直接更新 UI 元素 (不再需要額外的 updateTitleUI 函式)
-            if (pageTitle) {
-                document.title = pageTitle;
-            }
-            
-            const mainTitleElement = document.querySelector('.title-effect');
-            if (mainTitle && mainTitleElement) {
-                mainTitleElement.textContent = mainTitle;
-            }
-            
-            const subtitleElement = document.querySelector('.subtitle');
-            if (subtitle && subtitleElement) {
-                subtitleElement.textContent = subtitle;
-            }
-        }
-    } else {
-      console.warn('Could not fetch title data from OpenSheet. Falling back to default titles.');
-    }
+    console.log(`[DataService] Initializing sync for dataset: ${dataSourceConfig.sheetId}`);
 
-    // 2. Fetch Songs Data (分頁: Sheet1) - 繼續使用 OpenSheet
-    const songsApiUrl = `https://opensheet.elk.sh/${sheetId}/Sheet1`;
-    const songsResponse = await fetch(songsApiUrl);
-    
-    if (!songsResponse.ok) {
-      // 如果 OpenSheet 失敗，則呼叫備用函式 (僅嘗試 SheetDB)
-      return await fetchSheetDataAlternative(sheetId);
-    }
 
-    const songsData = await songsResponse.json();
+    const proxyEndpoint = 'https://script.google.com/macros/s/AKfycbw4HZekmV2_-9wU-Zz-PpcsPgsUgT2VFzQy93JoC47Mk0igAJDDMAFQDMYuE5Itglor/exec';
     
-    if (!songsData || songsData.length === 0) {
-      throw new Error('No song data found in Sheet1 via OpenSheet');
-    }
-    
-    // OpenSheet 的歌曲數據是陣列物件，可以直接傳給 processSheetData
-    processSheetData(songsData);
-    hideLoading();
-    
-  } catch (err) {
-    console.error('Error fetching sheet data:', err);
-    // 如果 OpenSheet 失敗，則呼叫備用函式 (僅嘗試 SheetDB)
-    await fetchSheetDataAlternative(sheetId);
-  }
-}
+    const targetUrl = dataSourceConfig.enableDataProxy ? proxyEndpoint : directApiEndpoint;
 
-// 最終備用獲取試算表數據方法 (僅使用 SheetDB)
-async function fetchSheetDataAlternative(sheetId) {
-  try {
-    // 這裡我們不再次嘗試 OpenSheet，直接使用 SheetDB 作為最終備用
-    const apiUrl = `https://sheetdb.io/api/v1/58f61be4dda40/${sheetId}`;
-    const response = await fetch(apiUrl);
+    const response = await fetch(targetUrl);
     
     if (!response.ok) {
-      throw new Error('All methods failed');
+      throw new Error('DataSync Exception: Failed to retrieve remote dataset.');
+    }
+
+    const data = await response.json();
+    
+    // 1. 處理標題與頁面設定 (來自 GAS 的 titleData)
+    if (data.titleData && data.titleData.length > 0) {
+      const titleObject = data.titleData[0];
+      const pageTitle = titleObject['分頁'] || '';
+      const mainTitle = titleObject['大標題'] || '';
+      const subtitle = titleObject['副標題'] || '';
+      
+      if (pageTitle) document.title = pageTitle;
+      const mainTitleElement = document.querySelector('.title-effect');
+      if (mainTitle && mainTitleElement) mainTitleElement.textContent = mainTitle;
+      const subtitleElement = document.querySelector('.subtitle');
+      if (subtitle && subtitleElement) subtitleElement.textContent = subtitle;
+    }
+
+    // 2. 處理內容資料 (來自 GAS 的 sheet1Data)
+    if (data.sheet1Data) {
+      processSheetData(data.sheet1Data);
+    } else {
+      processSheetData([]);
     }
     
-    const data = await response.json();
-    processSheetData(data);
     hideLoading();
-  } catch (finalErr) {
-    console.error('All alternative methods failed:', finalErr);
+  } catch (err) {
+    console.error('[DataService] Synchronization failed:', err);
     hideLoading();
     showError();
   }
