@@ -764,9 +764,14 @@ function toggleSearchClearButton() {
 // --- 智慧更新設定 ---
 let lastUpdateTimestamp = 0; // 記錄上次成功的更新時間
 const UPDATE_COOLDOWN = 2 * 60 * 1000; // 2 分鐘 (毫秒)
+let isFetching = false;
 
 // 獲取試算表數據 (新增 isSilent 參數，判斷是否為背景靜默更新)
 async function fetchSheetData(isSilent = false) {
+  // 【新增防護】如果已經在抓資料了，就直接擋掉，不執行後續動作
+  if (isFetching) return; 
+  isFetching = true; // 上鎖
+  
   // 如果不是靜默更新，才顯示讀取中動畫
   if (!isSilent) {
     showLoading();
@@ -817,18 +822,24 @@ async function fetchSheetData(isSilent = false) {
       hideLoading();
       showError();
     }
+  } finally {
+    // 【新增防護】不管成功或失敗，最後一定要把鎖解開
+    isFetching = false; 
   }
 }
-
 // 偵測是否需要更新的邏輯
 function checkForUpdate() {
+  // 【新增防護】如果已經在抓資料了，就直接退出，連時間都不用算
+  if (isFetching) return;
+
   const now = Date.now();
-  // 如果從未更新過，或距離上次更新超過 30 分鐘
+  // 如果從未更新過，或距離上次更新超過 2 分鐘
   if (lastUpdateTimestamp !== 0 && (now - lastUpdateTimestamp > UPDATE_COOLDOWN)) {
     console.log("[AutoSync] 偵測到活動且冷卻結束，啟動背景更新...");
     fetchSheetData(true); // 傳入 true，代表靜默更新，不轉圈圈
   }
 }
+
 
 // 監聽行為：使用者滑動網頁時
 window.addEventListener('scroll', () => {
