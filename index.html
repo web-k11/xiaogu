@@ -767,7 +767,7 @@ function toggleSearchClearButton() {
 // --- 智慧更新設定 ---
 let lastUpdateTimestamp = 0; // 記錄上次成功的更新時間
 const UPDATE_COOLDOWN = 2 * 60 * 1000; // 2 分鐘 (毫秒)
-let isFetching = false;
+
 
 // 獲取試算表數據 (新增 isSilent 參數，判斷是否為背景靜默更新)
 async function fetchSheetData(isSilent = false) {
