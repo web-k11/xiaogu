@@ -630,6 +630,9 @@ let selectedCategories = new Set();
 let currentLanguageFilter = 'all';
 let categoryGroups = new Map(); // 儲存分類群組
 let groupOrder = {}; // 群組順序
+let isFetching = false; 
+let displayLimit = 50; 
+const INCREMENT = 50; 
 
 
 // DOM 元素
@@ -768,6 +771,9 @@ let isFetching = false;
 
 // 獲取試算表數據 (新增 isSilent 參數，判斷是否為背景靜默更新)
 async function fetchSheetData(isSilent = false) {
+  if (isFetching) return; 
+  isFetching = true;
+
   // 【新增防護】如果已經在抓資料了，就直接擋掉，不執行後續動作
   if (isFetching) return; 
   isFetching = true; // 上鎖
@@ -823,7 +829,6 @@ async function fetchSheetData(isSilent = false) {
       showError();
     }
   } finally {
-    // 【新增防護】不管成功或失敗，最後一定要把鎖解開
     isFetching = false; 
   }
 }
@@ -948,6 +953,7 @@ function processSheetData(data) {
 
 // 過濾歌曲
 function filterSongs() {
+  displayLimit = INCREMENT;
   const searchTerm = searchInput.value.toLowerCase();
   
   filteredSongs = allSongs.filter(song => {
@@ -1198,15 +1204,51 @@ function updateSongsUI() {
     emptyState.classList.add('hidden');
     songsGrid.classList.remove('hidden');
 
-    filteredSongs.forEach(song => {
-      // 只有當歌名 (song.title) 有內容時，才建立並添加卡片
-      if (song.title) { // 檢查 song.title 是否為空字串、null 或 undefined
+    // 👉 3. 關鍵：只取出目前額度的歌曲 (前 50 首)
+    const songsToRender = filteredSongs.slice(0, displayLimit);
+    
+    songsToRender.forEach(song => {
+      if (song.title) {
         const card = createSongCard(song);
         songsGrid.appendChild(card);
       }
     });
   }
 }
+
+// 👉 3. 新增：懶加載函式
+function loadMoreSongs() {
+  const currentLength = songsGrid.children.length;
+  if (currentLength < filteredSongs.length) {
+    const nextBatch = filteredSongs.slice(currentLength, currentLength + INCREMENT);
+    const fragment = document.createDocumentFragment();
+    
+    nextBatch.forEach(song => {
+      if (song.title) {
+        fragment.appendChild(createSongCard(song));
+      }
+    });
+    
+    songsGrid.appendChild(fragment);
+    displayLimit += INCREMENT;
+  }
+}
+
+// 👉 3. 修改滑動監聽：找到原本的 window.addEventListener('scroll') 替換成這段
+window.addEventListener('scroll', () => {
+  checkForUpdate(); // 背景更新偵測
+  
+  if (window.scrollY > 300) {
+    backToTop.classList.remove('hidden');
+  } else {
+    backToTop.classList.add('hidden');
+  }
+
+  // 👉 3. 偵測滑到底部 500px 內，觸發載入更多
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+    loadMoreSongs();
+  }
+}, { passive: true });
 
 // 創建歌曲卡片
 function createSongCard(song) {
