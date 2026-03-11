@@ -774,9 +774,6 @@ async function fetchSheetData(isSilent = false) {
   if (isFetching) return; 
   isFetching = true;
 
-  // 【新增防護】如果已經在抓資料了，就直接擋掉，不執行後續動作
-  if (isFetching) return; 
-  isFetching = true; // 上鎖
   
   // 如果不是靜默更新，才顯示讀取中動畫
   if (!isSilent) {
